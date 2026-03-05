@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#0d1f3c"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="KAB Tracker"/>
+<link rel="manifest" href="manifest.json"/>
+<title>KAB Services — Truck Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --navy:#0d1f3c; --blue:#1a3a6b; --mid:#1e4d8c;
+  --accent:#2d7dd2; --bright:#4fa3e8; --teal:#00c9b1;
+  --gold:#f5a623; --red:#e74c3c; --green:#2ecc71;
+  --white:#fff; --muted:#8899aa;
+  --border:rgba(255,255,255,0.1); --card:rgba(255,255,255,0.07);
+  --shadow:0 8px 32px rgba(0,0,0,0.3);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'Barlow',sans-serif;background:var(--navy);color:var(--white);max-width:430px;margin:0 auto;height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+.screen{display:none;flex-direction:column;height:100%;animation:fadeIn 0.25s ease;}
+.screen.active{display:flex;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+/* TOPBAR */
+.topbar{background:linear-gradient(135deg,var(--navy),var(--blue));padding:48px 16px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.topbar-logo{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--bright));display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:13px;flex-shrink:0;}
+.topbar-title{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:0.5px;flex:1;}
+.topbar-sub{font-size:11px;color:var(--muted);margin-top:1px;}
+.topbar-btn{background:var(--card);border:1px solid var(--border);color:var(--white);border-radius:10px;padding:8px 12px;font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0;}
+
+/* SCROLL */
+.scroll{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch;}
+.scroll::-webkit-scrollbar{display:none;}
+
+/* NAV */
+.nav{background:rgba(13,31,60,0.97);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;flex-shrink:0;padding-bottom:env(safe-area-inset-bottom);}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 0;cursor:pointer;color:var(--muted);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;gap:3px;}
+.nav-item .icon{font-size:19px;}
+.nav-item.active{color:var(--bright);}
+
+/* PIN SCREEN */
+.pin-screen-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:20px;}
+.pin-logo{font-size:56px;margin-bottom:16px;}
+.pin-title{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;margin-bottom:6px;}
+.pin-sub{font-size:13px;color:var(--muted);margin-bottom:24px;text-align:center;}
+.pin-who{display:flex;flex-direction:column;gap:10px;width:100%;max-width:320px;margin-bottom:20px;}
+.pin-who-btn{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.15s;}
+.pin-who-btn:active{background:rgba(255,255,255,0.12);}
+.pin-who-avatar{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;flex-shrink:0;}
+.pin-who-name{font-weight:700;font-size:15px;flex:1;}
+.pin-who-role{font-size:10px;color:var(--muted);margin-top:2px;}
+
+/* PIN PAD */
+.pin-dots{display:flex;gap:14px;justify-content:center;margin:20px 0 8px;}
+.pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--bright);transition:all 0.2s;}
+.pin-dot.filled{background:var(--bright);}
+.pin-error{color:var(--red);font-size:13px;min-height:20px;text-align:center;margin-bottom:8px;}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;max-width:280px;}
+.pin-key{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:17px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;cursor:pointer;transition:all 0.15s;}
+.pin-key:active{background:var(--accent);transform:scale(0.95);}
+.pin-back-btn{margin-top:16px;color:var(--muted);font-size:13px;cursor:pointer;text-align:center;}
+
+/* CARDS */
+.stats-row{display:flex;gap:8px;margin-bottom:14px;}
+.stat-box{flex:1;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 8px;text-align:center;}
+.stat-num{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:var(--bright);}
+.stat-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px;font-weight:600;}
+
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.section-title{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);}
+.section-action{font-size:12px;color:var(--bright);font-weight:600;cursor:pointer;}
+
+.truck-card{background:linear-gradient(135deg,#1a3a6b,#2d5fa8);border-radius:18px;border:1px solid rgba(255,255,255,0.12);padding:16px;margin-bottom:12px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+.truck-card.paid{border-left:4px solid var(--green);}
+.truck-card.partial{border-left:4px solid var(--gold);}
+.truck-card.unpaid{border-left:4px solid var(--red);}
+.truck-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
+.truck-plate{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;letter-spacing:1px;}
+.truck-date{font-size:11px;color:rgba(255,255,255,0.5);margin-top:2px;}
+.status-badge{padding:4px 9px;border-radius:20px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;}
+.status-paid{background:rgba(46,204,113,0.2);color:#2ecc71;border:1px solid rgba(46,204,113,0.3);}
+.status-partial{background:rgba(245,166,35,0.2);color:#f5a623;border:1px solid rgba(245,166,35,0.3);}
+.status-unpaid{background:rgba(231,76,60,0.2);color:#e74c3c;border:1px solid rgba(231,76,60,0.3);}
+.truck-meta{display:flex;gap:14px;flex-wrap:wrap;}
+.truck-meta-label{font-size:9px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;}
+.truck-meta-value{font-size:13px;font-weight:600;margin-top:2px;}
+.truck-actions{display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.1);}
+.truck-action-btn{flex:1;padding:8px;border-radius:10px;border:none;cursor:pointer;font-family:'Barlow',sans-serif;font-size:12px;font-weight:600;}
+.btn-edit{background:rgba(77,163,232,0.2);color:var(--bright);border:1px solid rgba(77,163,232,0.3);}
+.btn-delete{background:rgba(231,76,60,0.15);color:#e74c3c;border:1px solid rgba(231,76,60,0.2);}
+
+.worker-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;}
+.worker-avatar{width:42px;height:42px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;}
+.advance-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;}
+
+.filter-bar{display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px;}
+.filter-bar::-webkit-scrollbar{display:none;}
+.filter-chip{padding:6px 13px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;cursor:pointer;border:1.5px solid rgba(255,255,255,0.15);background:transparent;color:var(--muted);flex-shrink:0;}
+.filter-chip.active{background:var(--accent);color:white;border-color:var(--accent);}
+
+.form-group{margin-bottom:12px;}
+.form-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;display:block;}
+.form-input,.form-select{width:100%;padding:11px 13px;border-radius:11px;background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.12);color:var(--white);font-family:'Barlow',sans-serif;font-size:14px;font-weight:500;outline:none;transition:border 0.2s;-webkit-appearance:none;}
+.form-input:focus,.form-select:focus{border-color:var(--bright);}
+.form-select option{background:var(--navy);}
+.form-row{display:flex;gap:10px;}
+.form-row .form-group{flex:1;}
+.btn-primary{width:100%;padding:13px;border-radius:13px;border:none;background:linear-gradient(135deg,var(--accent),var(--bright));color:white;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;cursor:pointer;}
+.btn-secondary{width:100%;padding:12px;border-radius:13px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px;}
+.btn-danger{width:100%;padding:12px;border-radius:13px;border:1.5px solid rgba(231,76,60,0.3);background:rgba(231,76,60,0.1);color:#e74c3c;font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px;}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:100;display:none;align-items:flex-end;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:#0d1f3c;border-radius:24px 24px 0 0;border-top:1px solid var(--border);width:100%;max-width:430px;padding:22px 18px 40px;max-height:90vh;overflow-y:auto;animation:slideUp 0.3s ease;}
+@keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.modal-handle{width:40px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;margin:0 auto 18px;}
+.modal-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;margin-bottom:18px;}
+
+.empty{text-align:center;padding:40px 20px;color:var(--muted);}
+.empty .icon{font-size:44px;margin-bottom:10px;opacity:0.5;}
+
+.toast{position:fixed;bottom:76px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(30,77,140,0.95);backdrop-filter:blur(10px);border:1px solid var(--border);color:white;padding:11px 22px;border-radius:30px;font-size:13px;font-weight:600;z-index:999;transition:all 0.3s;opacity:0;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+.admin-badge{background:rgba(255,215,0,0.15);border:1px solid rgba(255,215,0,0.3);color:#ffd700;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:1px;}
+.worker-badge{padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:1px;}
+
+.report-card{background:linear-gradient(135deg,var(--blue),var(--mid));border-radius:16px;border:1px solid var(--border);padding:16px;margin-bottom:12px;}
+.report-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
+.report-row:last-child{border-bottom:none;}
+.report-key{font-size:12px;color:var(--muted);}
+.report-val{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;}
+
+.settings-item{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;cursor:pointer;}
+.pin-display{font-family:'Barlow Condensed',sans-serif;font-size:18px;letter-spacing:6px;color:var(--muted);}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════
+     SCREEN: WHO ARE YOU?
+══════════════════════════════════ -->
+<div class="screen active" id="screen-login">
+  <div class="topbar">
+    <div class="topbar-logo">KAB</div>
+    <div><div class="topbar-title">Wais-Kabe Tracker</div><div class="topbar-sub">KAB Services — Djibouti</div></div>
+  </div>
+  <div class="pin-screen-inner">
+    <div class="pin-logo">🚛</div>
+    <div class="pin-title">Who are you?</div>
+    <div class="pin-sub">Select your name to log in</div>
+    <div class="pin-who" id="who-list"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN: PIN ENTRY
+══════════════════════════════════ -->
+<div class="screen" id="screen-pin">
+  <div class="topbar">
+    <div class="topbar-logo">KAB</div>
+    <div><div class="topbar-title" id="pin-screen-name">Enter PIN</div><div class="topbar-sub">KAB Services — Djibouti</div></div>
+  </div>
+  <div class="pin-screen-inner">
+    <div class="pin-logo" id="pin-avatar-big">👤</div>
+    <div class="pin-title" id="pin-name-big">Name</div>
+    <div class="pin-sub">Enter your PIN</div>
+    <div class="pin-dots">
+      <div class="pin-dot" id="pd0"></div>
+      <div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div>
+      <div class="pin-dot" id="pd3"></div>
+    </div>
+    <div class="pin-error" id="pin-error"></div>
+    <div class="pin-pad">
+      <div class="pin-key" onclick="pinKey('1')">1</div>
+      <div class="pin-key" onclick="pinKey('2')">2</div>
+      <div class="pin-key" onclick="pinKey('3')">3</div>
+      <div class="pin-key" onclick="pinKey('4')">4</div>
+      <div class="pin-key" onclick="pinKey('5')">5</div>
+      <div class="pin-key" onclick="pinKey('6')">6</div>
+      <div class="pin-key" onclick="pinKey('7')">7</div>
+      <div class="pin-key" onclick="pinKey('8')">8</div>
+      <div class="pin-key" onclick="pinKey('9')">9</div>
+      <div class="pin-key" style="font-size:13px;color:var(--muted);" onclick="goBack()">← Back</div>
+      <div class="pin-key" onclick="pinKey('0')">0</div>
+      <div class="pin-key" style="font-size:18px;" onclick="pinKey('del')">⌫</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN: WORKER DASHBOARD
+══════════════════════════════════ -->
+<div class="screen" id="screen-worker">
+  <div class="topbar">
+    <div class="topbar-logo">KAB</div>
+    <div><div class="topbar-title" id="worker-topbar-name">My Trucks</div><div class="topbar-sub">KAB Services — Djibouti</div></div>
+    <button class="topbar-btn" onclick="openModal('modal-add-truck')">+ Add</button>
+  </div>
+  <div class="scroll">
+    <div class="stats-row" id="worker-stats"></div>
+    <div class="filter-bar">
+      <button class="filter-chip active" onclick="setFilter('all',this)">All</button>
+      <button class="filter-chip" onclick="setFilter('paid',this)">✅ Paid</button>
+      <button class="filter-chip" onclick="setFilter('partial',this)">⚡ Partial</button>
+      <button class="filter-chip" onclick="setFilter('unpaid',this)">❌ Unpaid</button>
+    </div>
+    <div class="section-hdr">
+      <span class="section-title">My Trucks</span>
+      <span class="section-action" onclick="openModal('modal-add-truck')">+ New</span>
+    </div>
+    <div id="worker-trucks-list"></div>
+  </div>
+  <nav class="nav">
+    <div class="nav-item active" onclick="workerTab('trucks')"><span class="icon">🚛</span>My Trucks</div>
+    <div class="nav-item" onclick="workerTab('earnings')"><span class="icon">💰</span>Earnings</div>
+    <div class="nav-item" onclick="logout()"><span class="icon">🚪</span>Logout</div>
+  </nav>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN: WORKER EARNINGS
+══════════════════════════════════ -->
+<div class="screen" id="screen-worker-earnings">
+  <div class="topbar">
+    <div class="topbar-logo">KAB</div>
+    <div><div class="topbar-title" id="earn-topbar-name">My Earnings</div><div class="topbar-sub">KAB Services — Djibouti</div></div>
+  </div>
+  <div class="scroll">
+    <div id="worker-earnings-content"></div>
+  </div>
+  <nav class="nav">
+    <div class="nav-item" onclick="workerTab('trucks')"><span class="icon">🚛</span>My Trucks</div>
+    <div class="nav-item active" onclick="workerTab('earnings')"><span class="icon">💰</span>Earnings</div>
+    <div class="nav-item" onclick="logout()"><span class="icon">🚪</span>Logout</div>
+  </nav>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN: ADMIN — TRACKER
+══════════════════════════════════ -->
+<div class="screen" id="screen-admin-tracker">
+  <div class="topbar">
+    <div class="topbar-logo">KAB</div>
+    <div><div class="topbar-title">All Trucks</div><div class="topbar-sub">Admin View — All Workers</div></div>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <div class="admin-badge">ADMIN</div>
+      <button class="topbar-btn" onclick="openModal('modal-add-truck')">+ Add</button>
+    </div>
+  </div>
+  <div class="scroll">
+    <div class="stats-row" id="admin-stats"></div>
+    <div class="filter-bar">
+      <button class="filter-chip active" onclick="setFilter('all',this)">All</button>
+      <button class="filter-chip" onclick="setFilter('paid',this)">✅ Paid</button>
+      <button class="filter-chip" onclick="setFilter('partial',this)">⚡ Partial</button>
+      <button class="filter-chip" onclick="setFilter('unpaid',this)">❌ Unpaid</button>
+    </div>
+    <div class="section-hdr">
+      <span class="section-title">All Trucks</span>
+      <span class="section-action" onclick="openModal('modal-add-truck')">+ New</span>
+    </div>
+    <div id="admin-trucks-list"></div>
+  </div>
+  <nav class="nav">
+    <div class="nav-item active" onclick="adminTab('tracker')"><span class="icon">🚛</span>Trucks</div>
+    <div class="nav-item" onclick="adminTab('workers')"><span class="icon">👷</span>Workers</div>
+    <div class="nav-item" onclick="adminTab('advances')"><span class="icon">💸</span>Advances</div>
+    <div class="nav-item" onclick="adminTab('reports')"><span class="icon">📊</span>Reports</div>
+    <div class="nav-item" onclick="adminTab('manage')"><span class="icon">⚙️</span>Manage</div>
+  </nav>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN: ADMIN — WORKERS
+══════════════════════════════════ -->
+<div class="screen" id="screen-admin-workers">
+  <div class="topbar">
+    <div class="topbar-logo">KAB</div>
+    <div><div class="topbar-title">Workers</div><div class="topbar-sub">All workers & earnings</div></div>
+    <div class="admin-badge">ADMIN</div>
+  </div>
+  <div class="scroll"><div id="admin-workers-list"></div></div>
+  <nav class="nav">
+    <div class="nav-item" onclick="adminTab('tracker')"><span class="icon">🚛</span>Trucks</div>
+    <div class="nav-item active" onclick="adminTab('workers')"><span class="icon">👷</span>Workers</div>
+    <div class="nav-item" onclick="adminTab('advances')"><span class="icon">💸</span>Advances</div>
+    <div class="nav-item" onclick="adminTab('reports')"><span class="icon">📊</span>Reports</div>
+    <div class="nav-item" onclick="adminTab('manage')"><span class="icon">⚙️</span>Manage</div>
+  </nav>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN: ADMIN — ADVANCES
+══════════════════════════════════ -->
+<div class="screen" id="screen-admin-advances">
+  <div class="topbar">
+    <div class="topbar-logo">KAB</div>
+    <div><div class="topbar-title">Advances</div><div class="topbar-sub">All credit records</div></div>
+    <button class="topbar-btn" onclick="openModal('modal-add-advance')">+ Add</button>
+  </div>
+  <div class="scroll"><div id="admin-advances-list"></div></div>
+  <nav class="nav">
+    <div class="nav-item" onclick="adminTab('tracker')"><span class="icon">🚛</span>Trucks</div>
+    <div class="nav-item" onclick="adminTab('workers')"><span class="icon">👷</span>Workers</div>
+    <div class="nav-item active" onclick="adminTab('advances')"><span class="icon">💸</span>Advances</div>
+    <div class="nav-item" onclick="adminTab('reports')"><span class="icon">📊</span>Reports</div>
+    <div class="nav-item" onclick="adminTab('manage')"><span class="icon">⚙️</span>Manage</div>
+  </nav>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN: ADMIN — REPORTS
+══════════════════════════════════ -->
+<div class="screen" id="screen-admin-reports">
+  <div class="topbar">
+    <div class="topbar-logo">KAB</div>
+    <div><div class="topbar-title">Reports</div><div class="topbar-sub">Full earnings overview</div></div>
+    <div class="admin-badge">ADMIN</div>
+  </div>
+  <div class="scroll"><div id="admin-reports-content"></div></div>
+  <nav class="nav">
+    <div class="nav-item" onclick="adminTab('tracker')"><span class="icon">🚛</span>Trucks</div>
+    <div class="nav-item" onclick="adminTab('workers')"><span class="icon">👷</span>Workers</div>
+    <div class="nav-item" onclick="adminTab('advances')"><span class="icon">💸</span>Advances</div>
+    <div class="nav-item active" onclick="adminTab('reports')"><span class="icon">📊</span>Reports</div>
+    <div class="nav-item" onclick="adminTab('manage')"><span class="icon">⚙️</span>Manage</div>
+  </nav>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN: ADMIN — MANAGE
+══════════════════════════════════ -->
+<div class="screen" id="screen-admin-manage">
+  <div class="topbar">
+    <div class="topbar-logo">KAB</div>
+    <div><div class="topbar-title">Manage</div><div class="topbar-sub">Workers & PINs</div></div>
+    <div class="admin-badge">ADMIN</div>
+  </div>
+  <div class="scroll">
+    <div class="section-hdr">
+      <span class="section-title">Workers & PINs</span>
+      <span class="section-action" onclick="openModal('modal-add-worker')">+ Add Worker</span>
+    </div>
+    <div id="manage-workers-list"></div>
+    <div style="height:16px;"></div>
+    <div class="section-hdr"><span class="section-title">Admin PIN</span></div>
+    <div class="settings-item" onclick="openModal('modal-change-admin-pin')">
+      <span style="font-size:20px;">🔐</span>
+      <span style="flex:1;font-weight:600;">Change Admin PIN</span>
+      <span class="pin-display">••••</span>
+    </div>
+    <div style="height:16px;"></div>
+    <div class="section-hdr"><span class="section-title">Data</span></div>
+    <button class="btn-danger" onclick="exportData()">📤 Export All Data (JSON)</button>
+    <button class="btn-danger" onclick="clearAllData()">🗑️ Clear All Data</button>
+    <button class="btn-secondary" onclick="logout()">🚪 Logout</button>
+    <div style="height:20px;"></div>
+  </div>
+  <nav class="nav">
+    <div class="nav-item" onclick="adminTab('tracker')"><span class="icon">🚛</span>Trucks</div>
+    <div class="nav-item" onclick="adminTab('workers')"><span class="icon">👷</span>Workers</div>
+    <div class="nav-item" onclick="adminTab('advances')"><span class="icon">💸</span>Advances</div>
+    <div class="nav-item" onclick="adminTab('reports')"><span class="icon">📊</span>Reports</div>
+    <div class="nav-item active" onclick="adminTab('manage')"><span class="icon">⚙️</span>Manage</div>
+  </nav>
+</div>
+
+<!-- ══════════════════════════════════
+     MODALS
+══════════════════════════════════ -->
+<div class="modal-overlay" id="modal-add-truck">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-truck-title">🚛 Add Truck</div>
+    <div class="form-group"><label class="form-label">Plate Number</label><input class="form-input" id="f-plate" placeholder="DJ-1234" style="text-transform:uppercase;"/></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="f-date" type="date"/></div>
+      <div class="form-group" id="f-worker-group"><label class="form-label">Worker</label><select class="form-select" id="f-worker"></select></div>
+    </div>
+    <div class="form-group"><label class="form-label">Payment Status</label>
+      <select class="form-select" id="f-status">
+        <option value="unpaid">❌ Unpaid</option>
+        <option value="partial">⚡ Partial</option>
+        <option value="paid">✅ Paid</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Notes (optional)</label><input class="form-input" id="f-notes" placeholder="Any notes..."/></div>
+    <input type="hidden" id="f-edit-id"/>
+    <button class="btn-primary" onclick="saveTruck()">Save Truck</button>
+    <button class="btn-secondary" onclick="closeModal('modal-add-truck')">Cancel</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-add-advance">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">💰 Add Advance</div>
+    <div class="form-group"><label class="form-label">Worker</label><select class="form-select" id="a-worker"></select></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Amount (FDJ)</label><input class="form-input" id="a-amount" type="number" placeholder="0"/></div>
+      <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="a-date" type="date"/></div>
+    </div>
+    <div class="form-group"><label class="form-label">Reason (optional)</label><input class="form-input" id="a-reason" placeholder="Reason..."/></div>
+    <button class="btn-primary" onclick="saveAdvance()">Save Advance</button>
+    <button class="btn-secondary" onclick="closeModal('modal-add-advance')">Cancel</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-add-worker">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">👷 Add Worker</div>
+    <div class="form-group"><label class="form-label">Worker Name</label><input class="form-input" id="w-name" placeholder="Full name"/></div>
+    <div class="form-group"><label class="form-label">PIN (4 digits)</label><input class="form-input" id="w-pin" type="number" placeholder="e.g. 2345" maxlength="4" style="letter-spacing:6px;font-size:20px;text-align:center;"/></div>
+    <button class="btn-primary" onclick="addWorker()">Add Worker</button>
+    <button class="btn-secondary" onclick="closeModal('modal-add-worker')">Cancel</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-edit-worker-pin">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="edit-pin-title">🔐 Change PIN</div>
+    <input type="hidden" id="edit-pin-worker"/>
+    <div class="form-group"><label class="form-label">New PIN (4 digits)</label><input class="form-input" id="edit-pin-val" type="number" placeholder="New PIN" maxlength="4" style="letter-spacing:6px;font-size:20px;text-align:center;"/></div>
+    <button class="btn-primary" onclick="saveWorkerPin()">Save PIN</button>
+    <button class="btn-secondary" onclick="closeModal('modal-edit-worker-pin')">Cancel</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-change-admin-pin">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🔐 Change Admin PIN</div>
+    <div class="form-group"><label class="form-label">New Admin PIN (4 digits)</label><input class="form-input" id="new-admin-pin" type="number" placeholder="New PIN" maxlength="4" style="letter-spacing:6px;font-size:20px;text-align:center;"/></div>
+    <button class="btn-primary" onclick="saveAdminPin()">Save PIN</button>
+    <button class="btn-secondary" onclick="closeModal('modal-change-admin-pin')">Cancel</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════════
+const RATE = 1300;
+const COLORS = ['#2d7dd2','#00c9b1','#f5a623','#e74c3c','#9b59b6','#1abc9c','#e67e22'];
+
+function ld(k,d){try{return JSON.parse(localStorage.getItem(k))||d;}catch{return d;}}
+function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+// Default setup: Admin + 5 workers each with their own PIN
+let adminPin  = ld('kab_admin_pin','1234');
+let workers   = ld('kab_workers', [
+  {name:'Ahmed', pin:'2222', color:'#2d7dd2'},
+  {name:'Radwan',pin:'3333', color:'#00c9b1'},
+  {name:'Oli',   pin:'4444', color:'#f5a623'},
+  {name:'Ali',   pin:'5555', color:'#e74c3c'},
+  {name:'Omar',  pin:'6666', color:'#9b59b6'},
+]);
+let trucks    = ld('kab_trucks', []);
+let advances  = ld('kab_advances', []);
+
+let currentUser = null; // null = not logged in
+let isAdmin     = false;
+let currentFilter = 'all';
+let pinEntry    = '';
+let pinTarget   = null; // who we're logging in as
+
+// ══════════════════════════════════════════════════
+// LOGIN FLOW
+// ══════════════════════════════════════════════════
+function renderWhoList() {
+  const list = document.getElementById('who-list');
+  // Admin button first
+  let html = `
+    <div class="pin-who-btn" onclick="selectUser('admin')">
+      <div class="pin-who-avatar" style="background:rgba(255,215,0,0.2);color:#ffd700;border:1px solid rgba(255,215,0,0.3);">👑</div>
+      <div><div class="pin-who-name">Admin</div><div class="pin-who-role">Full access · KAB Services</div></div>
+    </div>`;
+  workers.forEach((w,i) => {
+    html += `
+    <div class="pin-who-btn" onclick="selectUser('${w.name}')">
+      <div class="pin-who-avatar" style="background:${w.color}33;color:${w.color};border:1px solid ${w.color}44;">${w.name.slice(0,2).toUpperCase()}</div>
+      <div><div class="pin-who-name">${w.name}</div><div class="pin-who-role">Worker · My trucks only</div></div>
+    </div>`;
+  });
+  list.innerHTML = html;
+}
+
+function selectUser(name) {
+  pinTarget = name;
+  pinEntry = '';
+  updatePinDots();
+  document.getElementById('pin-error').textContent = '';
+
+  if (name === 'admin') {
+    document.getElementById('pin-screen-name').textContent = 'Admin Login';
+    document.getElementById('pin-avatar-big').textContent = '👑';
+    document.getElementById('pin-name-big').textContent = 'Admin';
+  } else {
+    const w = workers.find(x=>x.name===name);
+    document.getElementById('pin-screen-name').textContent = name;
+    document.getElementById('pin-avatar-big').textContent = name.slice(0,2).toUpperCase();
+    document.getElementById('pin-avatar-big').style.cssText = `font-size:32px;font-family:'Barlow Condensed',sans-serif;font-weight:800;width:64px;height:64px;border-radius:18px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;background:${w.color}33;color:${w.color};`;
+    document.getElementById('pin-name-big').textContent = name;
+  }
+
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-pin').classList.add('active');
+}
+
+function goBack() {
+  pinEntry=''; updatePinDots();
+  document.getElementById('pin-error').textContent='';
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-login').classList.add('active');
+}
+
+function pinKey(k) {
+  if (k==='del'){pinEntry=pinEntry.slice(0,-1);updatePinDots();return;}
+  if (pinEntry.length>=4) return;
+  pinEntry+=k;
+  updatePinDots();
+  if (pinEntry.length===4) {
+    setTimeout(checkPin, 200);
+  }
+}
+
+function updatePinDots() {
+  [0,1,2,3].forEach(i=>{
+    document.getElementById('pd'+i).classList.toggle('filled', i<pinEntry.length);
+  });
+}
+
+function checkPin() {
+  if (pinTarget==='admin') {
+    if (pinEntry===adminPin) {
+      isAdmin=true; currentUser='admin';
+      pinEntry=''; updatePinDots();
+      enterAdmin();
+    } else {
+      showPinError();
+    }
+  } else {
+    const w = workers.find(x=>x.name===pinTarget);
+    if (w && pinEntry===w.pin) {
+      isAdmin=false; currentUser=w.name;
+      pinEntry=''; updatePinDots();
+      enterWorker(w);
+    } else {
+      showPinError();
+    }
+  }
+}
+
+function showPinError() {
+  document.getElementById('pin-error').textContent='❌ Wrong PIN — try again';
+  pinEntry=''; updatePinDots();
+  setTimeout(()=>document.getElementById('pin-error').textContent='', 2000);
+}
+
+function logout() {
+  currentUser=null; isAdmin=false; pinEntry='';
+  renderWhoList();
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-login').classList.add('active');
+}
+
+// ══════════════════════════════════════════════════
+// WORKER VIEW
+// ══════════════════════════════════════════════════
+function enterWorker(w) {
+  document.getElementById('worker-topbar-name').textContent = w.name + ' — My Trucks';
+  document.getElementById('earn-topbar-name').textContent = w.name + ' — My Earnings';
+  workerTab('trucks');
+}
+
+function workerTab(tab) {
+  const screens = ['screen-worker','screen-worker-earnings'];
+  screens.forEach(s=>{
+    document.getElementById(s).classList.remove('active');
+    document.getElementById(s).style.display='none';
+  });
+  if (tab==='trucks') {
+    document.getElementById('screen-worker').classList.add('active');
+    document.getElementById('screen-worker').style.display='flex';
+    renderWorkerTrucks();
+  } else {
+    document.getElementById('screen-worker-earnings').classList.add('active');
+    document.getElementById('screen-worker-earnings').style.display='flex';
+    renderWorkerEarnings();
+  }
+}
+
+function renderWorkerTrucks() {
+  const myTrucks = trucks.filter(t=>t.worker===currentUser);
+  const filtered = currentFilter==='all' ? myTrucks : myTrucks.filter(t=>t.status===currentFilter);
+  const w = workers.find(x=>x.name===currentUser);
+  const color = w ? w.color : 'var(--bright)';
+
+  const paid    = myTrucks.filter(t=>t.status==='paid').length;
+  const unpaid  = myTrucks.filter(t=>t.status==='unpaid').length;
+  const earnings = myTrucks.length * RATE;
+
+  document.getElementById('worker-stats').innerHTML = `
+    <div class="stat-box"><div class="stat-num" style="color:${color}">${myTrucks.length}</div><div class="stat-lbl">My Trucks</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:var(--green)">${paid}</div><div class="stat-lbl">Paid</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:var(--red)">${unpaid}</div><div class="stat-lbl">Unpaid</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:var(--teal);font-size:16px;">${(earnings/1000).toFixed(1)}k</div><div class="stat-lbl">FDJ</div></div>`;
+
+  const list = document.getElementById('worker-trucks-list');
+  if (!filtered.length) {
+    list.innerHTML=`<div class="empty"><div class="icon">🚛</div><p>No trucks yet.<br>Tap + Add to record a truck.</p></div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(tk=>`
+    <div class="truck-card ${tk.status}">
+      <div class="truck-header">
+        <div><div class="truck-plate">${tk.plate}</div><div class="truck-date">${fmtDate(tk.date)}</div></div>
+        <div class="status-badge status-${tk.status}">${tk.status}</div>
+      </div>
+      <div class="truck-meta">
+        <div><div class="truck-meta-label">Earnings</div><div class="truck-meta-value" style="color:var(--teal)">${RATE.toLocaleString()} FDJ</div></div>
+        ${tk.notes?`<div><div class="truck-meta-label">Note</div><div class="truck-meta-value" style="font-size:12px;color:var(--muted)">${tk.notes}</div></div>`:''}
+      </div>
+      <div class="truck-actions">
+        <button class="truck-action-btn btn-edit" onclick="editTruck('${tk.id}')">✏️ Edit Status</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderWorkerEarnings() {
+  const myTrucks   = trucks.filter(t=>t.worker===currentUser);
+  const myAdvances = advances.filter(a=>a.worker===currentUser);
+  const earnings   = myTrucks.length * RATE;
+  const advTotal   = myAdvances.reduce((s,a)=>s+a.amount,0);
+  const net        = earnings - advTotal;
+  const w = workers.find(x=>x.name===currentUser);
+  const color = w ? w.color : 'var(--bright)';
+
+  let html = `
+    <div class="report-card" style="border-left:4px solid ${color};">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;margin-bottom:12px;color:${color};">💰 My Summary</div>
+      <div class="report-row"><span class="report-key">Total Trucks</span><span class="report-val">${myTrucks.length}</span></div>
+      <div class="report-row"><span class="report-key">Gross Earnings</span><span class="report-val" style="color:var(--teal)">${earnings.toLocaleString()} FDJ</span></div>
+      <div class="report-row"><span class="report-key">Advances Taken</span><span class="report-val" style="color:var(--gold)">${advTotal.toLocaleString()} FDJ</span></div>
+      <div class="report-row"><span class="report-key">Net Balance</span><span class="report-val" style="color:${net>=0?'var(--green)':'var(--red)'}">${net.toLocaleString()} FDJ</span></div>
+    </div>`;
+
+  if (myAdvances.length) {
+    html += `<div class="section-hdr" style="margin-top:4px;"><span class="section-title">My Advances</span></div>`;
+    html += myAdvances.map(a=>`
+      <div class="advance-card">
+        <div style="font-size:22px;">💰</div>
+        <div style="flex:1;"><div style="font-weight:600;font-size:14px;">${fmtDate(a.date)}</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">${a.reason||'No reason'}</div></div>
+        <div><div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--gold)">${a.amount.toLocaleString()}</div><div style="font-size:9px;color:var(--muted);text-align:right;">FDJ</div></div>
+      </div>`).join('');
+  }
+
+  if (myTrucks.length) {
+    html += `<div class="section-hdr" style="margin-top:4px;"><span class="section-title">Truck History</span></div>`;
+    html += myTrucks.map(tk=>`
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;">
+        <div style="width:10px;height:10px;border-radius:50%;background:${tk.status==='paid'?'var(--green)':tk.status==='partial'?'var(--gold)':'var(--red)'};flex-shrink:0;"></div>
+        <div style="flex:1;"><div style="font-weight:600;font-size:14px;">${tk.plate}</div><div style="font-size:11px;color:var(--muted);">${fmtDate(tk.date)} · ${tk.status}</div></div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--teal)">${RATE.toLocaleString()}</div>
+      </div>`).join('');
+  }
+
+  document.getElementById('worker-earnings-content').innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════
+// ADMIN VIEW
+// ══════════════════════════════════════════════════
+function enterAdmin() {
+  adminTab('tracker');
+}
+
+function adminTab(tab) {
+  const tabs = ['tracker','workers','advances','reports','manage'];
+  tabs.forEach(t=>{
+    const el = document.getElementById('screen-admin-'+t);
+    if(el){el.classList.remove('active');el.style.display='none';}
+  });
+  const el = document.getElementById('screen-admin-'+tab);
+  if(el){el.classList.add('active');el.style.display='flex';}
+  if(tab==='tracker')  renderAdminTrucks();
+  if(tab==='workers')  renderAdminWorkers();
+  if(tab==='advances') renderAdminAdvances();
+  if(tab==='reports')  renderAdminReports();
+  if(tab==='manage')   renderManage();
+}
+
+function renderAdminTrucks() {
+  const filtered = currentFilter==='all' ? trucks : trucks.filter(t=>t.status===currentFilter);
+  const paid    = trucks.filter(t=>t.status==='paid').length;
+  const partial = trucks.filter(t=>t.status==='partial').length;
+  const unpaid  = trucks.filter(t=>t.status==='unpaid').length;
+
+  document.getElementById('admin-stats').innerHTML = `
+    <div class="stat-box"><div class="stat-num">${trucks.length}</div><div class="stat-lbl">Total</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:var(--green)">${paid}</div><div class="stat-lbl">Paid</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:var(--gold)">${partial}</div><div class="stat-lbl">Partial</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:var(--red)">${unpaid}</div><div class="stat-lbl">Unpaid</div></div>`;
+
+  const list = document.getElementById('admin-trucks-list');
+  if(!filtered.length){list.innerHTML=`<div class="empty"><div class="icon">🚛</div><p>No trucks found</p></div>`;return;}
+  list.innerHTML = filtered.map(tk=>{
+    const w = workers.find(x=>x.name===tk.worker);
+    const color = w ? w.color : 'var(--bright)';
+    return `
+    <div class="truck-card ${tk.status}">
+      <div class="truck-header">
+        <div><div class="truck-plate">${tk.plate}</div><div class="truck-date">${fmtDate(tk.date)}</div></div>
+        <div class="status-badge status-${tk.status}">${tk.status}</div>
+      </div>
+      <div class="truck-meta">
+        <div><div class="truck-meta-label">Worker</div><div class="truck-meta-value" style="color:${color}">👷 ${tk.worker}</div></div>
+        <div><div class="truck-meta-label">Earnings</div><div class="truck-meta-value" style="color:var(--teal)">${RATE.toLocaleString()} FDJ</div></div>
+        ${tk.notes?`<div><div class="truck-meta-label">Note</div><div class="truck-meta-value" style="font-size:12px;color:var(--muted)">${tk.notes}</div></div>`:''}
+      </div>
+      <div class="truck-actions">
+        <button class="truck-action-btn btn-edit" onclick="editTruck('${tk.id}')">✏️ Edit</button>
+        <button class="truck-action-btn btn-delete" onclick="deleteTruck('${tk.id}')">🗑️ Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderAdminWorkers() {
+  const list = document.getElementById('admin-workers-list');
+  list.innerHTML = workers.map(w=>{
+    const count    = trucks.filter(t=>t.worker===w.name).length;
+    const earnings = count * RATE;
+    const advTotal = advances.filter(a=>a.worker===w.name).reduce((s,a)=>s+a.amount,0);
+    const net      = earnings - advTotal;
+    return `
+    <div class="worker-card">
+      <div class="worker-avatar" style="background:${w.color}33;color:${w.color};">${w.name.slice(0,2).toUpperCase()}</div>
+      <div style="flex:1;">
+        <div style="font-weight:700;font-size:15px;">${w.name}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">${count} trucks · Advance: ${advTotal.toLocaleString()} FDJ</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;color:var(--teal)">${earnings.toLocaleString()}</div>
+        <div style="font-size:9px;color:var(--muted);">Earned FDJ</div>
+        <div style="font-size:11px;color:${net>=0?'var(--green)':'var(--red)'};font-weight:700;">Net: ${net.toLocaleString()}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderAdminAdvances() {
+  const list = document.getElementById('admin-advances-list');
+  if(!advances.length){list.innerHTML=`<div class="empty"><div class="icon">💰</div><p>No advances recorded</p></div>`;return;}
+  list.innerHTML = advances.map(a=>`
+    <div class="advance-card">
+      <div style="font-size:22px;">💰</div>
+      <div style="flex:1;"><div style="font-weight:600;font-size:14px;">${a.worker}</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">${fmtDate(a.date)}${a.reason?' · '+a.reason:''}</div></div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--gold)">${a.amount.toLocaleString()}</div>
+        <div style="font-size:9px;color:var(--muted);">FDJ</div>
+        <button onclick="deleteAdvance('${a.id}')" style="background:rgba(231,76,60,0.15);border:1px solid rgba(231,76,60,0.2);color:#e74c3c;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;">Delete</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderAdminReports() {
+  const totalEarn = trucks.length * RATE;
+  const totalAdv  = advances.reduce((s,a)=>s+a.amount,0);
+  const paid      = trucks.filter(t=>t.status==='paid').length;
+  const unpaid    = trucks.filter(t=>t.status==='unpaid').length;
+  const partial   = trucks.filter(t=>t.status==='partial').length;
+
+  let html = `
+    <div class="report-card">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;margin-bottom:12px;color:var(--bright);">📊 Overall Summary</div>
+      <div class="report-row"><span class="report-key">Total Trucks</span><span class="report-val">${trucks.length}</span></div>
+      <div class="report-row"><span class="report-key">Total Earnings</span><span class="report-val" style="color:var(--teal)">${totalEarn.toLocaleString()} FDJ</span></div>
+      <div class="report-row"><span class="report-key">Paid</span><span class="report-val" style="color:var(--green)">${paid}</span></div>
+      <div class="report-row"><span class="report-key">Partial</span><span class="report-val" style="color:var(--gold)">${partial}</span></div>
+      <div class="report-row"><span class="report-key">Unpaid</span><span class="report-val" style="color:var(--red)">${unpaid}</span></div>
+      <div class="report-row"><span class="report-key">Total Advances</span><span class="report-val" style="color:var(--gold)">${totalAdv.toLocaleString()} FDJ</span></div>
+      <div class="report-row"><span class="report-key">Net Total</span><span class="report-val" style="color:var(--bright)">${(totalEarn-totalAdv).toLocaleString()} FDJ</span></div>
+    </div>
+    <div class="report-card">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;margin-bottom:12px;color:var(--bright);">👷 Per Worker</div>
+      ${workers.map(w=>{
+        const cnt  = trucks.filter(t=>t.worker===w.name).length;
+        const earn = cnt * RATE;
+        const adv  = advances.filter(a=>a.worker===w.name).reduce((s,a)=>s+a.amount,0);
+        const net  = earn - adv;
+        return `<div class="report-row">
+          <span class="report-key" style="color:${w.color}">${w.name}</span>
+          <span style="text-align:right;font-size:12px;">
+            <span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;">${cnt} trucks</span><br>
+            <span style="color:var(--teal)">${earn.toLocaleString()} FDJ</span> · 
+            <span style="color:${net>=0?'var(--green)':'var(--red)'}">Net ${net.toLocaleString()}</span>
+          </span>
+        </div>`;
+      }).join('')}
+    </div>`;
+  document.getElementById('admin-reports-content').innerHTML = html;
+}
+
+function renderManage() {
+  const list = document.getElementById('manage-workers-list');
+  list.innerHTML = workers.map(w=>`
+    <div class="worker-card">
+      <div class="worker-avatar" style="background:${w.color}33;color:${w.color};">${w.name.slice(0,2).toUpperCase()}</div>
+      <div style="flex:1;">
+        <div style="font-weight:700;font-size:15px;">${w.name}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">PIN: ${'•'.repeat(w.pin.length)}</div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button onclick="openEditPin('${w.name}')" style="background:rgba(79,163,232,0.15);border:1px solid rgba(79,163,232,0.3);color:var(--bright);border-radius:8px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer;">🔐 PIN</button>
+        <button onclick="removeWorker('${w.name}')" style="background:rgba(231,76,60,0.15);border:1px solid rgba(231,76,60,0.2);color:#e74c3c;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer;">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════════
+// TRUCKS CRUD
+// ══════════════════════════════════════════════════
+function openAddTruck() {
+  document.getElementById('f-date').value = today();
+  document.getElementById('f-edit-id').value = '';
+  document.getElementById('modal-truck-title').textContent = '🚛 Add Truck';
+  document.getElementById('f-plate').value = '';
+  document.getElementById('f-notes').value = '';
+  document.getElementById('f-status').value = 'unpaid';
+
+  const sel = document.getElementById('f-worker');
+  const grp = document.getElementById('f-worker-group');
+  if (isAdmin) {
+    grp.style.display = '';
+    sel.innerHTML = workers.map(w=>`<option value="${w.name}">${w.name}</option>`).join('');
+  } else {
+    grp.style.display = 'none';
+    sel.innerHTML = `<option value="${currentUser}">${currentUser}</option>`;
+  }
+  openModal('modal-add-truck');
+}
+
+function saveTruck() {
+  const plate  = document.getElementById('f-plate').value.trim().toUpperCase();
+  const date   = document.getElementById('f-date').value;
+  const worker = isAdmin ? document.getElementById('f-worker').value : currentUser;
+  const status = document.getElementById('f-status').value;
+  const notes  = document.getElementById('f-notes').value.trim();
+  const editId = document.getElementById('f-edit-id').value;
+  if (!plate||!date){toast('⚠️ Fill in plate and date');return;}
+
+  if (editId) {
+    const tk = trucks.find(x=>x.id===editId);
+    if(tk){tk.plate=plate;tk.date=date;tk.worker=worker;tk.status=status;tk.notes=notes;}
+  } else {
+    trucks.unshift({id:Date.now().toString(),plate,date,worker,status,notes,createdAt:new Date().toISOString()});
+  }
+  sv('kab_trucks',trucks);
+  closeModal('modal-add-truck');
+  if(isAdmin) renderAdminTrucks(); else renderWorkerTrucks();
+  toast('✅ Truck saved!');
+}
+
+function editTruck(id) {
+  const tk = trucks.find(x=>x.id===id);
+  if(!tk) return;
+  // Workers can only edit their own
+  if(!isAdmin && tk.worker!==currentUser){toast('❌ Not your truck');return;}
+  document.getElementById('modal-truck-title').textContent = '✏️ Edit Truck';
+  document.getElementById('f-plate').value  = tk.plate;
+  document.getElementById('f-date').value   = tk.date;
+  document.getElementById('f-notes').value  = tk.notes||'';
+  document.getElementById('f-status').value = tk.status;
+  document.getElementById('f-edit-id').value = tk.id;
+  const sel = document.getElementById('f-worker');
+  const grp = document.getElementById('f-worker-group');
+  if(isAdmin){
+    grp.style.display='';
+    sel.innerHTML=workers.map(w=>`<option value="${w.name}">${w.name}</option>`).join('');
+    sel.value=tk.worker;
+  } else {
+    grp.style.display='none';
+    sel.innerHTML=`<option value="${currentUser}">${currentUser}</option>`;
+  }
+  openModal('modal-add-truck');
+}
+
+function deleteTruck(id) {
+  if(!isAdmin){toast('🔐 Admin only');return;}
+  if(!confirm('Delete this truck record?')) return;
+  trucks=trucks.filter(x=>x.id!==id);
+  sv('kab_trucks',trucks);
+  renderAdminTrucks();
+  toast('🗑️ Deleted');
+}
+
+function setFilter(f,el) {
+  currentFilter=f;
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  if(isAdmin) renderAdminTrucks(); else renderWorkerTrucks();
+}
+
+// ══════════════════════════════════════════════════
+// ADVANCES
+// ══════════════════════════════════════════════════
+function openAddAdvance() {
+  document.getElementById('a-date').value=today();
+  document.getElementById('a-amount').value='';
+  document.getElementById('a-reason').value='';
+  const sel=document.getElementById('a-worker');
+  sel.innerHTML=workers.map(w=>`<option value="${w.name}">${w.name}</option>`).join('');
+  openModal('modal-add-advance');
+}
+
+function saveAdvance() {
+  const worker=document.getElementById('a-worker').value;
+  const amount=parseFloat(document.getElementById('a-amount').value);
+  const date=document.getElementById('a-date').value;
+  const reason=document.getElementById('a-reason').value.trim();
+  if(!amount||!date){toast('⚠️ Fill in amount and date');return;}
+  advances.unshift({id:Date.now().toString(),worker,amount,date,reason});
+  sv('kab_advances',advances);
+  closeModal('modal-add-advance');
+  renderAdminAdvances();
+  toast('💰 Advance saved!');
+}
+
+function deleteAdvance(id) {
+  if(!confirm('Delete this advance?')) return;
+  advances=advances.filter(x=>x.id!==id);
+  sv('kab_advances',advances);
+  renderAdminAdvances();
+  toast('🗑️ Deleted');
+}
+
+// ══════════════════════════════════════════════════
+// WORKER MANAGEMENT
+// ══════════════════════════════════════════════════
+function addWorker() {
+  const name=document.getElementById('w-name').value.trim();
+  const pin=document.getElementById('w-pin').value.trim();
+  if(!name){toast('⚠️ Enter worker name');return;}
+  if(pin.length!==4||isNaN(pin)){toast('⚠️ Enter 4-digit PIN');return;}
+  if(workers.find(w=>w.name===name)){toast('⚠️ Worker already exists');return;}
+  const color=COLORS[workers.length % COLORS.length];
+  workers.push({name,pin,color});
+  sv('kab_workers',workers);
+  closeModal('modal-add-worker');
+  renderManage();
+  renderWhoList();
+  toast('👷 Worker added!');
+}
+
+function removeWorker(name) {
+  if(!confirm('Remove '+name+'? Their truck records stay.')){return;}
+  workers=workers.filter(w=>w.name!==name);
+  sv('kab_workers',workers);
+  renderManage();
+  renderWhoList();
+  toast('🗑️ Worker removed');
+}
+
+function openEditPin(name) {
+  document.getElementById('edit-pin-title').textContent='🔐 Change PIN — '+name;
+  document.getElementById('edit-pin-worker').value=name;
+  document.getElementById('edit-pin-val').value='';
+  openModal('modal-edit-worker-pin');
+}
+
+function saveWorkerPin() {
+  const name=document.getElementById('edit-pin-worker').value;
+  const pin=document.getElementById('edit-pin-val').value.trim();
+  if(pin.length!==4||isNaN(pin)){toast('⚠️ Enter 4-digit PIN');return;}
+  const w=workers.find(x=>x.name===name);
+  if(w) w.pin=pin;
+  sv('kab_workers',workers);
+  closeModal('modal-edit-worker-pin');
+  renderManage();
+  toast('🔐 PIN updated for '+name);
+}
+
+function saveAdminPin() {
+  const pin=document.getElementById('new-admin-pin').value.trim();
+  if(pin.length!==4||isNaN(pin)){toast('⚠️ Enter 4-digit PIN');return;}
+  adminPin=pin;
+  sv('kab_admin_pin',adminPin);
+  closeModal('modal-change-admin-pin');
+  toast('🔐 Admin PIN changed!');
+}
+
+// ══════════════════════════════════════════════════
+// MODALS
+// ══════════════════════════════════════════════════
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  if(id==='modal-add-truck') openAddTruck();
+  if(id==='modal-add-advance') openAddAdvance();
+}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(o=>{
+  o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');});
+});
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');s.style.display='none';});
+  document.getElementById(id).classList.add('active');
+  document.getElementById(id).style.display='flex';
+}
+
+// ══════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════
+function today(){return new Date().toISOString().split('T')[0];}
+function fmtDate(d){if(!d)return'—';const dt=new Date(d+'T00:00:00');return dt.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2500);}
+function exportData(){
+  const data=JSON.stringify({trucks,advances,workers},null,2);
+  const blob=new Blob([data],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='kab-data-'+today()+'.json';
+  a.click();
+  toast('📤 Exported!');
+}
+function clearAllData(){
+  if(!confirm('Clear ALL data? Cannot be undone!'))return;
+  trucks=[];advances=[];
+  sv('kab_trucks',trucks);sv('kab_advances',advances);
+  renderAdminTrucks();
+  toast('🗑️ All data cleared');
+}
+
+// ══════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════
+// Show all screens as flex initially, then hide
+document.querySelectorAll('.screen').forEach(s=>{s.style.display='none';});
+document.getElementById('screen-login').style.display='flex';
+document.getElementById('screen-login').classList.add('active');
+renderWhoList();
+
+if('serviceWorker' in navigator) navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+</script>
+</body>
+</html>
